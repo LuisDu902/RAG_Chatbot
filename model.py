@@ -15,7 +15,7 @@ if os.path.exists("db"):    # Just load the database if it already exists
 else:
     loader = PDFPlumberLoader("document.pdf")
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000, chunk_overlap=200, add_start_index=True
+        chunk_size=1000, chunk_overlap=200, add_start_index=True, separators=[" ", "\n", "\n\n"]
     )
     pages = loader.load_and_split(text_splitter)
     vectorstore = Chroma.from_documents(documents=pages, embedding=embeddings, persist_directory="db")
@@ -41,35 +41,26 @@ def format_docs(docs):
         formatted_docs.append(content_with_page)
     return "\n\n".join(formatted_docs)
 
-
 class Model:    # A model is created per user session
+    def format_and_save_docs(self, docs):
+        self.docs = docs
+        formatted_docs = format_docs(docs)
+        return formatted_docs
+
     def __init__(self):
         self.llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+        self.docs = None
         self.rag_chain = (
-            {"context": retriever | format_docs, "question": RunnablePassthrough()}
+            {"context": retriever | self.format_and_save_docs, "question": RunnablePassthrough()}
             | prompt
             | self.llm
             | StrOutputParser()
-        )
-        self.qa_chain = RetrievalQA.from_chain_type(
-            llm=self.llm,
-            chain_type="stuff",
-            retriever=retriever,
-            return_source_documents=True,
-            chain_type_kwargs={"prompt": prompt},
         )
 
     def set_llm_parameters(self, temperature, top_k, top_p):
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-1.5-flash", temperature=temperature, top_k=top_k, top_p=top_p
         )
-
-    def run_rag_chain(self, message):
-        return self.rag_chain.invoke(message)
-
-    def run_qa_chain(self, query):
-        return self.qa_chain.invoke({"query": query})
-
 
 if __name__ == "__main__":
     query = "Describe the use of harmonised standards"

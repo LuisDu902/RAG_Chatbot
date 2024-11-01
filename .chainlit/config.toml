@@ -57,7 +57,7 @@ edit_message = true
 name = "Assistant for medical devices regulation"
 
 # Description of the assistant. This is used for HTML tags.
-description = "This assistant helps you to understand the regulation of medical devices. It is built based on a Retrieval Augment Generation model."
+description = "This assistant helps you understand the regulation of medical devices, through the use of Retrieval Augmented Generation (RAG) techniques."
 
 # Large size content are by default collapsed for a cleaner ui
 default_collapse_content = true
