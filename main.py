@@ -117,9 +117,11 @@ async def main(message: cl.Message):
 
     model = get_model()
 
-    async for chunk in model.rag_chain.astream(message.content):
+    model.chat_history.add_user_message(message.content)
+    async for chunk in model.rag_chain.astream({"question": message.content, "chat_history": model.chat_history.messages}):
         await msg.stream_token(chunk)
     await msg.send()
+    model.chat_history.add_ai_message(msg.content)
 
     docs = model.docs
     if docs is not None:
