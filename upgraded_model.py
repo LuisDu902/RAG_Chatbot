@@ -58,7 +58,7 @@ class UpgradedModel(Model):
         # And ask the LLM to perform a search (can filter) based on the question generated
         self.retriever_chain = retriever_prompt_template | self.llm | StrOutputParser()
 
-        # Normal RAG chain with the documents from the retrieval
+        # Normal QA RAG chain with the documents from the retrieval
         self.rag_chain = self.qa_prompt | self.llm | StrOutputParser()
 
     def __get_llm_db_question(self, user_question):
