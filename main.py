@@ -1,12 +1,13 @@
 from dotenv import load_dotenv
-
 load_dotenv()
 
-import chainlit as cl  # pip install chainlit
-from chainlit.input_widget import Select, Switch, Slider
+import chainlit as cl
+from chainlit.input_widget import Slider
 from chainlit.chat_settings import ChatSettings
 
 from model import Model
+from basic_model import BasicModel
+from upgraded_model import UpgradedModel
 
 temperature_id = "Temperature"
 top_k_id = "Top k"
@@ -47,20 +48,17 @@ async def start():
                 max=1,
                 step=0.01,
             ),
-            # Switch(id="Retrieval", label="Use Retrieval", initial=True),
-            # Switch(id="QA", label="Use QA", initial=True),
         ]
     ).send()
 
     cl.user_session.set(settings_id, settings)
     cl.user_session.set(needs_settings_update_id, True)
-    cl.user_session.set(model_id, Model())
+    cl.user_session.set(model_id, UpgradedModel())
     cl.user_session.set(sources_id, [])
     cl.user_session.set(sources_shown_id, [])
 
     start_message = cl.Message(
-        content="""
-# Welcome to the RAG chatbot that helps you understand MDR
+        content="""# Welcome to the RAG chatbot that helps you understand MDR
 This model is designed to assist you in searching and understanding **medical devices regulation**. You can also adjust the model's settings to customize its behavior.
 Check the Readme on the left for more information."""
     )
@@ -91,7 +89,7 @@ def get_model():
 async def show_sources(action: cl.Action):
     id = int(action.value)
     sources_message: cl.Message = cl.user_session.get(sources_id)[id]
-    sources_shown: [bool] = cl.user_session.get(sources_shown_id)
+    sources_shown: list[bool] = cl.user_session.get(sources_shown_id)
     shown = sources_shown[id]
     if shown:
         await sources_message.remove()
@@ -113,19 +111,21 @@ async def main(message: cl.Message):
     Returns:
         None.
     """
-    msg = cl.Message(content="")
-
     model = get_model()
 
     model.chat_history.add_user_message(message.content)
-    async for chunk in model.rag_chain.astream({"question": message.content, "chat_history": model.chat_history.messages}):
-        await msg.stream_token(chunk)
-    await msg.send()
-    model.chat_history.add_ai_message(msg.content)
+    response = model.invoke(message.content)
+    if response == "":
+        response = """It seems that the LLM model is not able to generate a response for this question
+        It may be because of **API limits**. Please try waiting one minute, or asking it in another way."""
+
+    cl_msg = cl.Message(content=response)
+
+    model.chat_history.add_ai_message(response)
 
     docs = model.docs
     if docs is not None:
-        # Format the sources in italics, showing page numbers and content previews
+        # Format the sources in italics, showing page numbers and the complete source content
 
         sources_content = "\n\n".join(
             f"- ***Page {doc.metadata.get('page') + 1}**: \"{doc.page_content}\"*"
@@ -143,6 +143,6 @@ async def main(message: cl.Message):
 
         sources.append(sources_message)
         sources_shown.append(False)
-        msg.actions = [action]
+        cl_msg.actions = [action]
 
-    await msg.send()
+    await cl_msg.send()
