@@ -5,6 +5,10 @@
 
 Before running the notebook, you should make sure that the `ipykernel` package is installed by running `pip install ipykernel`.
 
+### Gemini free API key
+You will need an API key to use Gemini. You can obtain a free API key from the Gemini website. You can find more information [here](https://ai.google.dev/pricing?authuser=1#1_5flash).
+
+After obtaining an API key, you should copy the file `.env.template` into a new file called `.env` and replace `GOOGLE_API_KEY=...` by `GOOGLE_API_KEY=<your_api_key>`.
 
 ## Running the interface
 You are encouraged to first run the notebook, since it already includes all the libraries needed to run the interface.
