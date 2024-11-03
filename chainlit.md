@@ -3,6 +3,8 @@
 ## Introduction 📚
 This is a chatbot that will answer questions about information present in the document `Medical Device Regulation (MDR)`.
 ## Methodology 🧠
+- The question posed by the user is first passed through a Language Model (LLM) to generate a question that will be used to search the database.
+- The LLM will also help generate the actual query to the database, with the ability to use metadata filters, for example, filtering by page number.
 - Similarity search is performed across the document to find the most relevant information in comparison to the given question.
 - The model then generates an answer based on the retrieved information.
 
